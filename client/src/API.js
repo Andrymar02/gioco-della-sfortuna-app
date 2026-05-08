@@ -72,3 +72,12 @@ export async function getMatchHistory() {
   const response = await fetch(`${SERVER_URL}/matches`, { credentials: 'include' });
   return handleResponse(response);
 }
+
+export async function registerUser(credentials) {
+  const response = await fetch(`${SERVER_URL}/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+  return handleResponse(response);
+}

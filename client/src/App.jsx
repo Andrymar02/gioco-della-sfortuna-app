@@ -8,6 +8,7 @@ import LoginForm from './components/LoginForm';
 import Profile from './components/Profile';
 import Game from './components/Game';
 import Instructions from './components/Instructions';
+import RegisterForm from './components/RegisterForm';
 
 // Sotto-componente per la barra di navigazione
 function AppNavbar({ user, handleLogout }) {
@@ -30,7 +31,10 @@ function AppNavbar({ user, handleLogout }) {
               <Button variant="outline-light" onClick={handleLogout}>Logout</Button>
             </>
           ) : (
-            <Button variant="light" onClick={() => navigate('/login')}>Login</Button>
+            <>
+              <Button variant="light" className="me-2" onClick={() => navigate('/login')}>Login</Button>
+              <Button variant="outline-light" onClick={() => navigate('/register')}>Registrati</Button>
+            </>
           )}
         </Nav>
       </Container>
@@ -94,6 +98,11 @@ function MainApp() {
           {/* Rotta Profilo */}
           <Route path="/profile" element={
             user ? <Profile user={user} /> : <Navigate to="/login" />
+          } />
+
+          {/* Rotta di Registrazione */}
+          <Route path="/register" element={
+            user ? <Navigate to="/" /> : <RegisterForm />
           } />
 
           {/* Fallback per URL inesistenti */}

@@ -157,3 +157,32 @@ export const getMatchHistory = (userId) => {
     });
   });
 };
+
+export const createUser = (username, password) => {
+  return new Promise((resolve, reject) => {
+    // Generiamo un nuovo salt per il nuovo utente
+    const salt = crypto.randomBytes(16).toString('hex');
+    
+    // Calcoliamo l'hash della password
+    crypto.scrypt(password, salt, 32, (err, hashedPassword) => {
+      if (err) reject(err);
+      
+      const hashHex = hashedPassword.toString('hex');
+      const sql = 'INSERT INTO users (username, hash, salt) VALUES (?, ?, ?)';
+      
+      db.run(sql, [username, hashHex, salt], function (err) {
+        if (err) {
+          // Se lo username esiste già nel db, SQLite restituisce un errore di constraint
+          if (err.message.includes('UNIQUE constraint failed')) {
+            resolve({ error: 'Questo username è già in uso. Scegline un altro.' });
+          } else {
+            reject(err);
+          }
+        } else {
+          // Restituisce l'ID del nuovo utente inserito
+          resolve({ id: this.lastID, username: username });
+        }
+      });
+    });
+  });
+};
