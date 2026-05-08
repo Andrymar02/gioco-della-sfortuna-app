@@ -169,3 +169,23 @@ app.get('/api/matches', isLoggedIn, async (req, res) => {
 app.listen(port, () => {
   console.log(`API Server in esecuzione su http://localhost:${port}`);
 });
+
+app.post('/api/users', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    // Validazione base
+    if (!username || !password || password.length < 4) {
+      return res.status(400).json({ error: 'Username o password non validi (minimo 4 caratteri).' });
+    }
+
+    const result = await dao.createUser(username, password);
+    if (result.error) {
+      return res.status(409).json({ error: result.error }); // 409 Conflict se esiste già
+    }
+    
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Errore interno del server durante la registrazione.' });
+  }
+});
