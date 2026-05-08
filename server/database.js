@@ -1,4 +1,5 @@
 import sqlite3 from 'sqlite3';
+import crypto from 'crypto';
 
 // Inizializza il database SQLite
 const db = new sqlite3.Database('game.sqlite', (err) => {
@@ -142,20 +143,21 @@ db.serialize(() => {
     // Aggiungo anche gli utenti di default per poter fare login (pass: 'password')
     db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
       if (row.count === 0) {
-        // La password per entrambi è "password" (hash generato con un salt 'test-salt')
-        // In produzione useresti un tool per generare il salt vero, questo è solo mock.
-        const users = [
-          ['giocatore1', '2ccb72a6a617651a66b26d36e8b4e72332616f9f0d11019183cc9c2d1b73e5f2', 'test-salt'],
-          ['giocatore2', '2ccb72a6a617651a66b26d36e8b4e72332616f9f0d11019183cc9c2d1b73e5f2', 'test-salt']
-        ];
-        
-        const stmt = db.prepare("INSERT INTO users (username, hash, salt) VALUES (?, ?, ?)");
-        users.forEach(user => stmt.run(user));
-        stmt.finalize();
-        console.log("Database popolato con utenti fittizi.");
+        // Generiamo il salt e l'hash in modo dinamico e corretto
+        const salt = crypto.randomBytes(16).toString('hex');
+        crypto.scrypt('password', salt, 32, (err, hashedPassword) => {
+          if (err) throw err;
+          const hashHex = hashedPassword.toString('hex');
+          
+          const stmt = db.prepare("INSERT INTO users (username, hash, salt) VALUES (?, ?, ?)");
+          stmt.run('giocatore1', hashHex, salt);
+          stmt.run('giocatore2', hashHex, salt);
+          stmt.finalize();
+          console.log("Database popolato con utenti fittizi corretti.");
+        });
       }
     });
-  });
+});
 
   // Tabella Partite
   db.run(`CREATE TABLE IF NOT EXISTS matches (

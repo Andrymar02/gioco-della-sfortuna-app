@@ -1,122 +1,116 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Container, Navbar, Nav, Button, Spinner } from 'react-bootstrap';
+import * as API from './API';
 
-function App() {
-  const [count, setCount] = useState(0)
+// Importiamo i nuovi componenti!
+import LoginForm from './components/LoginForm';
+import Profile from './components/Profile';
+import Game from './components/Game';
+import Instructions from './components/Instructions';
+
+// Sotto-componente per la barra di navigazione
+function AppNavbar({ user, handleLogout }) {
+  const navigate = useNavigate();
+  return (
+    <Navbar bg="dark" variant="dark" expand="lg" className="mb-4">
+      <Container>
+        <Navbar.Brand role="button" onClick={() => navigate('/')}>
+          Gioco della Sfortuna 🤦‍♂️
+        </Navbar.Brand>
+        <Nav className="me-auto">
+          <Nav.Link onClick={() => navigate('/')}>Gioca</Nav.Link>
+          <Nav.Link onClick={() => navigate('/instructions')}>Istruzioni</Nav.Link>
+          {user && <Nav.Link onClick={() => navigate('/profile')}>Profilo</Nav.Link>}
+        </Nav>
+        <Nav>
+          {user ? (
+            <>
+              <Navbar.Text className="me-3">Ciao, {user.username}!</Navbar.Text>
+              <Button variant="outline-light" onClick={handleLogout}>Logout</Button>
+            </>
+          ) : (
+            <Button variant="light" onClick={() => navigate('/login')}>Login</Button>
+          )}
+        </Nav>
+      </Container>
+    </Navbar>
+  );
+}
+
+function MainApp() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const currentUser = await API.getUserInfo();
+        setUser(currentUser);
+      } catch (err) {
+        // Nessun utente loggato
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogin = async (credentials) => {
+    const user = await API.logIn(credentials);
+    setUser(user);
+  };
+
+  const handleLogout = async () => {
+    await API.logOut();
+    setUser(null);
+    navigate('/');
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  }
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <AppNavbar user={user} handleLogout={handleLogout} />
+      <Container>
+        <Routes>
+          {/* Rotta principale con il Gioco vero e proprio */}
+          <Route path="/" element={
+             <Game user={user} />
+          } />
 
-      <div className="ticks"></div>
+          {/* Rotta di Login */}
+          <Route path="/login" element={
+            user ? <Navigate to="/" /> : <LoginForm login={handleLogin} />
+          } />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          {/* Rotta Profilo */}
+          <Route path="/profile" element={
+            user ? <Profile user={user} /> : <Navigate to="/login" />
+          } />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+          {/* Fallback per URL inesistenti */}
+          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="/instructions" element={<Instructions />} />
+        </Routes>
+      </Container>
     </>
-  )
+  );
 }
 
-export default App
+function App() {
+  return (
+    <BrowserRouter>
+      <MainApp />
+    </BrowserRouter>
+  );
+}
+
+export default App;
